@@ -1,0 +1,57 @@
+<?php
+session_start();
+require 'db.php';
+
+// Check admin access
+if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
+    header("Location: index.php");
+    exit;
+}
+
+// Search functionality
+$search = isset($_GET['search']) ? "%{$_GET['search']}%" : '%';
+$stmt = $pdo->prepare("SELECT * FROM members WHERE name LIKE ? OR email LIKE ?");
+$stmt->execute([$search, $search]);
+$members = $stmt->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin - Member Management</title>
+</head>
+<body>
+    <h1>Member Listing</h1>
+    
+    <form method="get">
+        <input type="text" name="search" placeholder="Search by name or email">
+        <button type="submit">Search</button>
+    </form>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Profile Photo</th>
+            <th>Actions</th>
+        </tr>
+        <?php foreach ($members as $member): ?>
+        <tr>
+            <td><?= $member['id'] ?></td>
+            <td><?= htmlspecialchars($member['name']) ?></td>
+            <td><?= htmlspecialchars($member['email']) ?></td>
+            <td>
+                <?php if ($member['profile_photo']): ?>
+                    <img src="<?= $member['profile_photo'] ?>" width="50">
+                <?php endif; ?>
+            </td>
+            <td>
+                <a href="member_detail.php?id=<?= $member['id'] ?>">View</a>
+                <a href="delete_member.php?id=<?= $member['id'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
+            </td>
+        </tr>
+        <?php endforeach; ?>
+    </table>
+</body>
+</html>
